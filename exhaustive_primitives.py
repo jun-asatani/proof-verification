@@ -2,17 +2,21 @@
 Shared primitives for the exhaustive decoding-uniqueness verification
 (Appendix A of the paper): the state predicates and the decoding map D2,
 parametrized by (k, q, l) so the same functions serve both the k=4 case
-(Lemma 1) and the k>4 generalizations (Proposition 1).
+(Theorem 1) and the k>4 generalizations (Proposition 1).
 
 read_index_c implements the manuscript's explicit first-occurrence
 tie-breaking rule (Section 3.2): a single deterministic index, never a
 set of tied candidates -- this matches both the encoder's own
 phase-selection logic and the decoder.
 
-read_alone(x, k, l) implements the "PAIR" multi-index condition: True
-as soon as ANY two distinct sections are both active and hold identical
-cell-value patterns (not requiring every section in the sub-block to
-match). At k=4 (p=2) this coincides with the only possible pairing.
+read_alone(x, k, l, design) implements the multi-index condition of
+Section 6 under either of its two designs:
+  "pair" (default): True as soon as ANY two distinct sections are both
+      active and hold identical cell-value patterns (not requiring every
+      section in the sub-block to match);
+  "all": True only if EVERY section is active and all sections hold the
+      identical cell-value pattern.
+At p=2 (k=2l, e.g. k=4) the two designs coincide.
 
 These functions are pure and stateless; they are imported by
 exhaustive_verify.py, which supplies the encoding step (apply_op) and
@@ -70,10 +74,14 @@ def parity(x):
     return sum(x) % 2
 
 
-def read_alone(x, k, l):
+def read_alone(x, k, l, design="pair"):
     p = k // l
     secs = [tuple(x[t * l:(t + 1) * l]) for t in range(p)]
     actives = [len(set(s)) != 1 for s in secs]
+    if design == "all":
+        return all(actives) and len(set(secs)) == 1
+    if design != "pair":
+        raise ValueError("design must be 'pair' or 'all'")
     for t in range(p):
         for t2 in range(t + 1, p):
             if actives[t] and actives[t2] and secs[t] == secs[t2]:
@@ -94,11 +102,11 @@ def read_maxnum(x):
     return sum(1 for v in x if v == m) == 1
 
 
-def decode(x, k, q, l):
+def decode(x, k, q, l, design="pair"):
     """D2 (Section 3.3): section-wise decode if x is in the multi-index
     state (read_alone), else whole-block read_index/parity decode."""
     claims = {}
-    if read_alone(x, k, l):
+    if read_alone(x, k, l, design):
         p = k // l
         for t in range(p):
             sec = x[t * l:(t + 1) * l]
