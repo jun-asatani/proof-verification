@@ -24,6 +24,8 @@ dependencies).
 | `repro_table_genfail_mc.py` | **Table 3** (Section 7.2): Monte Carlo decode-mismatch rate, 200 trials/condition, for every `(k,l,p)` generalization tested. (~1 min) |
 | `cross_check_encoder.py` | The hand-traced example from Section 4.2 (i = [1,1,4] on a single `k=4` sub-block), run against the real encoder to confirm the phase-by-phase state transitions cited in the text. |
 | `roundtrip_verify_k4.py` | The round-trip Monte Carlo checker described in Section 4.1 (`k=4`, 200 trials, decode-after-every-write comparison against the true information vector). |
+| `equivalence_check_k4.py` | **Section 8.5 (Limitations)**: at `k=4`, compares the exhaustive verifier's encoder (`exhaustive_verify.apply_op`) with `core_encoder.py` on all 2008 transitions (`q ∈ {2,3,4,5,6,8,12}`) and on 385,404 writes of simulated runs with `m=4` sub-blocks (`q ∈ {3,4,6,8}`); also confirms that the verifier's cell-full guard never triggers. (~1 min) |
+| `c_check/run_c_check.sh` | **Sections 5.2-5.3 and 8.5**: builds the C program `c_check/ilifc_core.c` (same logic as the conference-version `ilifc.c`, December 2013) and (i) reproduces the averages printed in Figs. 5-7 of the conference paper (proposed 44.195 / 76.015 / 107.982; CIL-ILIFC 41.554 / 72.637 / 104.177, the latter equal to the program with E2c removed), (ii) runs the ablations without E2c, without E2a, and with E2c after E2d, and (iii) checks all 769,687 writes of the C program (`q ∈ {3,4,6,8}`, 3000 trials each) against `exhaustive_verify.apply_op`. Needs `gcc` and `python3`; `c_check/mt.h` is a reference MT19937 implementation. (~1 min) |
 
 ## Notes on the generalization to k>4
 
@@ -69,8 +71,18 @@ caught by rebuilding this reproduction package.
   `design` argument (`"pair"`, the default and the only behavior of
   v1.0.0, or `"all"`), and the standalone run reports the exhaustive
   rows of Table 4 under both designs. The `"pair"` results are
-  identical to v1.0.0. Two combinations (`PAIR` at `(k,l,q)=(8,2,4)` and
-  `(12,2,6)` with `q=3`) exceed ~6 GB of RAM in this pure-Python
+  identical to v1.0.0. Two combinations (`PAIR` at `(k,l,q)=(8,2,4,4)` and
+  `(12,2,6,3)`) exceed ~6 GB of RAM in this pure-Python
   implementation and are not enumerated.
 - Table/theorem numbering in the documentation now matches the revised
   manuscript (Theorem 1; Tables 1-4; Algorithm 3).
+
+## Changes in v1.1.1
+
+- Added `equivalence_check_k4.py` and the `c_check/` directory (C program,
+  ablation variants, and the comparison against the exhaustive verifier),
+  which back the new Limitations subsection (Section 8.5) and the ablation
+  statements in Section 5.3 of the revised manuscript.
+- README: corrected the identification of the two PAIR runs that exceed
+  the memory limit (`(8,2,4,4)` and `(12,2,6,3)`).
+- No change to any previously released script or result.
